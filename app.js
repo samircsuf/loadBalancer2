@@ -16,7 +16,7 @@ var users = require('./routes/users');
 
 var app = express();
 
-var statServers = ['ws://127.0.0.1:8091', 'ws://127.0.0.1:8092', 'ws://127.0.0.1:8093'];
+var statServers = ['ws://192.168.0.21:8091', 'ws://192.168.0.23:8091', 'ws://192.168.0.25:8091'];
 //var streamServers = ['ws://127.0.0.1:8082', 'ws://127.0.0.1:8084','ws://127.0.0.1:8086'];
 var serverWeight = [];
 var cpu = [];

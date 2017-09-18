@@ -5,7 +5,7 @@ var router = express.Router();
 var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
 
-var streamServers = ['ws://127.0.0.1:8082', 'ws://127.0.0.1:8084','ws://127.0.0.1:8086'];
+var streamServers = ['ws://192.168.0.21:8082', 'ws://192.168.0.23:8082','ws://192.168.0.25:8082'];
 
 var nonElement = 8000;
 var finalIndex;
@@ -21,7 +21,7 @@ var finalIndex;
         touchAfter: 24 * 60 * 60 // time period in seconds for refresh sessions
     })
 }));
-*/
+
 router.use(session({
     secret: 'password',
     store: new MongoStore({
