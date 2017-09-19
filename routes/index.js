@@ -8,6 +8,7 @@ var MongoStore = require('connect-mongo')(session);
 var streamServers = ['ws://192.168.0.21:8082', 'ws://192.168.0.23:8082','ws://192.168.0.25:8082'];
 
 var nonElement = 8000;
+var serverWeight = [];
 var finalIndex;
 //connect-mongo Session
 /*router.use(session({
@@ -38,7 +39,7 @@ router.get('/', function(req, res, next) {
   //Additional check incase server goes down between the time server was selected and response was sent.
   //get the index and serverweight array
   var x = req.app.get('x');//Gets variable x from app.js
-  var serverWeight = req.app.get('serverWeight');
+  serverWeight = req.app.get('serverWeight');
 
   //Compare this index X with serverWeight index. If matches, chose alternate server whose serverWeight !== nonElement
   if (serverWeight[x] === nonElement){
@@ -50,7 +51,7 @@ router.get('/', function(req, res, next) {
     console.log('finalIndex if server is up: ', finalIndex);
   }
 
-  console.log('secondaryIndex', secondaryIndex);
+  //console.log('secondaryIndex', secondaryIndex);
   serverWeight.forEach(function(element){
     console.log('element', element);
   });
