@@ -5,11 +5,13 @@ var router = express.Router();
 var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
 
-var streamServers = ['ws://192.168.0.101:8082', 'ws://192.168.0.201:8082','ws://192.168.0.301:8082'];
+var streamServers = ['ws://192.168.0.101:8082', 'ws://192.168.0.201:8082','ws://192.168.0.241:8082'];
 
 var nonElement = 8000;
 var serverWeight = [];
 var finalIndex;
+var d = 0;
+var x;
 //connect-mongo Session
 /*router.use(session({
     secret: 'password1',
@@ -38,24 +40,32 @@ router.get('/', function(req, res, next) {
   //TO TEST
   //Additional check incase server goes down between the time server was selected and response was sent.
   //get the index and serverweight array
-  var x = req.app.get('x');//Gets variable x from app.js
-  serverWeight = req.app.get('serverWeight');
-
-  //Compare this index X with serverWeight index. If matches, chose alternate server whose serverWeight !== nonElement
-  if (serverWeight[x] === nonElement){
-    finalIndex = serverWeight.findIndex(nonMatchingIndex);//finds the server which is up
-    console.log('finalIndex if server went down: ', finalIndex);
+  console.log('req.route: ', req.route);
+  d = req.app.get('d');
+  console.log('d value: ', d);
+  if (d === true) {
+     res.render('index', { title: 'JSMpeg Stream Client. Servers down ', errorMsg: 'All Servers are currently down. Please retry after sometime.'});
   }
-  else{
-    finalIndex = x;
-    console.log('finalIndex if server is up: ', finalIndex);
-  }
+  else {
+       x = req.app.get('x');//Gets variable x from app.js
+       serverWeight = req.app.get('serverWeight');
 
-  //console.log('secondaryIndex', secondaryIndex);
-  serverWeight.forEach(function(element){
-    console.log('element', element);
-  });
-  res.render('index', { title: 'JSMpeg Stream Client', url: streamServers[finalIndex]});
+       //Compare this index X with serverWeight index. If matches, chose alternate server whose serverWeight !== nonElement
+       if (serverWeight[x] === nonElement){
+          finalIndex = serverWeight.findIndex(nonMatchingIndex);//finds the server which is up
+          console.log('finalIndex if server went down: ', finalIndex);
+       }
+       else {
+            finalIndex = x;
+            console.log('finalIndex if server is up: ', finalIndex);
+       }
+
+       //console.log('secondaryIndex', secondaryIndex);
+       serverWeight.forEach(function(element){
+       console.log('element', element);
+       });
+       res.render('index', { title: 'JSMpeg Stream Client', url: streamServers[finalIndex]});
+  }
 });
 
 //finds an element that is not matching a server that is down

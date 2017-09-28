@@ -16,7 +16,7 @@ var users = require('./routes/users');
 
 var app = express();
 
-var statServers = ['ws://192.168.0.101:8083', 'ws://192.168.0.201:8083', 'ws://192.168.0.301:8083'];
+var statServers = ['ws://192.168.0.101:8083', 'ws://192.168.0.201:8083', 'ws://192.168.0.241:8083'];
 //var streamServers = ['ws://127.0.0.1:8082', 'ws://127.0.0.1:8084','ws://127.0.0.1:8086'];
 var serverWeight = [];
 var cpu = [];
@@ -76,19 +76,38 @@ function scanServers(statServer, i){
   /*If any of the server is down, detect it and try to reconnect periodically and also determine optimal server based upon available servers*/
   wsc.on('close', function(event){
     console.log('Server connection closed.');
+    //check if al servers are up
+    var d = serverStatus(serverWeight);
+    console.log('var d:', d);
+
     //try to reconnect in 5 seconds
-    setTimeout(function(){scanServers(statServer, i)}, 5000);//irrespective of server number, it tries to reconnect
-    console.log('ws.on(close) Excluded server set.')
+    //setTimeout(function(){scanServers(statServer, i)}, 5000);//irrespective of server number, it tries to reconnect
+    console.log('ws.on(close) Excluded server set.');
     serverWeight.splice(i, 1, excludedServer);//insert the dummy weight for the server that is down
     //trigger point to calculate the weight
 /* If none of the server weight is equal is include server i.e. 9000, get the minimum weight. Do not need to do anything special here */
-    if (i === serverWeight.length -1 && serverWeight[serverWeight.length -1] === excludedServer){//exeuted when last server is dummy server
-      x = findOptimalServer(serverWeight, excludedServer);
-      console.log('ws.close - var x: ', x);
-      app.set('x', x);
-      app.set('serverWeight', serverWeight);
+    //if (d === true && i === serverWeight.length -1){
+    //  setTimeout(function(){scanServers(statServer, i)}, 5000);
+    //}
+    //else{
+    if (d === false){
+       if (i === serverWeight.length -1 && serverWeight[serverWeight.length -1] === excludedServer){//exeuted when last server is dummy server
+          x = findOptimalServer(serverWeight, excludedServer);
+          console.log('ws.close - var x: ', x);
+          app.set('x', x);
+          app.set('serverWeight', serverWeight);
+          setTimeout(function(){scanServers(statServer, i)}, 5000);
+       }
+       else {
+            setTimeout(function(){scanServers(statServer, i)}, 5000);
+            app.set ('d', d);
+       }
     }
-  });
+    else {
+         setTimeout(function(){scanServers(statServer, i)}, 5000);
+    }
+    //}
+ });
 /*
   wsc.addEventListener('error', function(e) {
           // readyState === 3 is CLOSED
@@ -136,6 +155,7 @@ function scanServers(statServer, i){
                                                                                                 //executed when last server is not dummy server
       x = findOptimalServer(serverWeight, excludedServer);
       app.set('x', x);
+      app.set('serverWeight', serverWeight);
     }
     //else if (serverWeight[i] !== excludedServer){
     //  x = findOptimalServer(serverWeight, excludedServer);
@@ -156,7 +176,7 @@ function findOptimalServer(serverWeight, index){
   var idu = checkUndefinedServer(serverWeight);//returns true if there is atleast one undefined else, returns false
 
   var idex = checkExcludedServer(serverWeight, index);//returns true if there is one excluded server
-
+  console.log('idex val: ', idex);
   //All servers are up, this code block gets executed
   if(idu === true){//this scenario arises when server starts up
     x = preferredServer;
@@ -262,6 +282,16 @@ function checkExcludedServer(serverWeight, index){
   }
   return false;
 }
+
+//check if all servers are down
+function serverStatus(serverWeight){
+  for (var i = 0; i < serverWeight.length; i++){
+    if (serverWeight[i] !== excludedServer)
+      return false;
+  }
+  return true;
+}
+
 //check for NaN
 function checkNaN(serverWeight) {
   for(var i = 0; i < serverWeight.length; i++) {
