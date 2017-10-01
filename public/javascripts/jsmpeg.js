@@ -645,7 +645,12 @@ JSMpeg.Source.WebSocket = function() {
         }
         this.socket.binaryType = "arraybuffer";
         this.socket.onmessage = this.onMessage.bind(this);
-        this.socket.onopen = this.onOpen.bind(this);
+        try {
+            this.socket.onopen = this.onOpen.bind(this);
+        }
+        catch(err) {
+                   console.log('err.message', err);
+        }
         this.socket.onerror = this.onClose.bind(this);
         this.socket.onclose = this.onClose.bind(this)
     };
