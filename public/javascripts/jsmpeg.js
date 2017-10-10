@@ -606,6 +606,8 @@ JSMpeg.Source.AjaxProgressive = function() {
 }();
 JSMpeg.Source.WebSocket = function() {
     "use strict";
+    //var appUrl = this.appUrl;
+    //var xmlHttp = this.xmlHttp;
     var WSSource = function(url, options) {
         this.url = url;
         this.options = options;
@@ -621,8 +623,10 @@ JSMpeg.Source.WebSocket = function() {
         this.established = false;
         this.progress = 0;
         this.reconnectTimeoutId = 0
-        this.appUrl = window.location.href;
-        this.xmlHttp = new XMLHttpRequest();
+        //this.appUrl = window.location.href;
+        //this.xmlHttp = new XMLHttpRequest();
+        //var appUrl = window.location.href;
+        //var xmlHttp = new XMLHttpRequest();
     };
     WSSource.prototype.connect = function(destination) {
         this.destination = destination;
@@ -633,6 +637,7 @@ JSMpeg.Source.WebSocket = function() {
         this.shouldAttemptReconnect = false;
         this.socket.close()
     };
+    //handles restart in case connection errors
     WSSource.prototype.start = function() {
         this.shouldAttemptReconnect = !!this.reconnectInterval;
         this.progress = 0;
@@ -641,18 +646,47 @@ JSMpeg.Source.WebSocket = function() {
             this.socket = new WebSocket(this.url, this.options.protocols || null);
         }
         catch (err) {
-                    console.log('ws connection couldn\'t be established at this time', err.message);
+                    console.log('ws connection couldn\'t be established at this time', err);
         }
         this.socket.binaryType = "arraybuffer";
-        this.socket.onmessage = this.onMessage.bind(this);
+        try {
+            this.socket.onmessage = this.onMessage.bind(this);
+        }
+        catch(err) {
+                   console.log('err.message on message', err);
+        }
+
         try {
             this.socket.onopen = this.onOpen.bind(this);
         }
         catch(err) {
-                   console.log('err.message', err);
+                   console.log('err.message on open', err);
         }
-        this.socket.onerror = this.onClose.bind(this);
-        this.socket.onclose = this.onClose.bind(this)
+        try {
+            this.socket.onerror = this.onClose.bind(this);
+        }
+        catch(err) {
+                   console.log('err.message on error', err);
+        }
+        try {
+            this.socket.onclose = this.onClose.bind(this);
+        }
+        catch(err) {
+                   console.log('err.message on close', err);
+        }
+    };
+    WSSource.prototype.failedStart = function() {
+       var ws = new WebSocket('ws://192.168.0.101:4000');
+       ws.onmessage = function(data){
+          this.url = data;
+       };
+       //this.socket.close();       
+       this.socket = new WebSocket(this.url, this.options.protocols || null);
+       this.socket.binaryType = "arraybuffer";
+       this.socket.onmessage = this.onMessage.bind(this);
+       this.socket.onopen = this.onOpen.bind(this);
+       this.socket.onerror = this.onClose.bind(this);
+       this.socket.onclose = this.onClose.bind(this)
     };
     WSSource.prototype.resume = function(secondsHeadroom) {};
     WSSource.prototype.onOpen = function() {
@@ -666,9 +700,9 @@ JSMpeg.Source.WebSocket = function() {
         console.log(xmlHttp.responseText);
     }    
     WSSource.prototype.onClose = function(ev) {
-        if (this.shouldAttemptReconnect) {
-            clearTimeout(this.reconnectTimeoutId);
-            this.reconnectTimeoutId = setTimeout(function() {
+        //if (this.shouldAttemptReconnect) {
+            //clearTimeout(this.reconnectTimeoutId);
+            //this.reconnectTimeoutId = setTimeout(function() {
                   //this.resendGET();
                   //try {
                   //    this.start();
@@ -676,10 +710,15 @@ JSMpeg.Source.WebSocket = function() {
                   //catch(err) {
                   //           console.log('WebSocket error: ' + err.message);
                   //}
-                  this.start(); 
-                  this.destination.write(ev);
-            }.bind(this), this.reconnectInterval * 1e3)
-        }
+                  //this.start(); 
+                  //this.destination.write(ev);
+            //}.bind(this), this.reconnectInterval * 1e3)
+        //}
+        //this.destroy();
+        //setTimeout(function() {
+        //          this.resendGET();
+        //}, 2000);
+        this.failedStart();
     };
     WSSource.prototype.onMessage = function(ev) {
         if (this.destination) {

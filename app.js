@@ -16,8 +16,11 @@ var users = require('./routes/users');
 
 var app = express();
 
+var server = app.listen(3000);
+var wss = new WebSocket.Server({ port: 4000 });
+
 var statServers = ['ws://192.168.0.101:8083', 'ws://192.168.0.201:8083', 'ws://192.168.0.241:8083'];
-//var streamServers = ['ws://127.0.0.1:8082', 'ws://127.0.0.1:8084','ws://127.0.0.1:8086'];
+var streamServers = ['ws://192.168.0.101:8082', 'ws://192.168.0.201:8082','ws://192.168.0.241:8082'];
 var serverWeight = [];
 var cpu = [];
 var openfd = [];
@@ -96,6 +99,7 @@ function scanServers(statServer, i){
           console.log('ws.close - var x: ', x);
           app.set('x', x);
           app.set('serverWeight', serverWeight);
+          broadcastIP(streamServers[x]);
           setTimeout(function(){scanServers(statServer, i)}, 5000);
        }
        else {
@@ -156,6 +160,7 @@ function scanServers(statServer, i){
       x = findOptimalServer(serverWeight, excludedServer);
       app.set('x', x);
       app.set('serverWeight', serverWeight);
+      broadcastIP(streamServers[x]);
     }
     //else if (serverWeight[i] !== excludedServer){
     //  x = findOptimalServer(serverWeight, excludedServer);
@@ -301,7 +306,17 @@ function checkNaN(serverWeight) {
   return true;
 }
 
-//function serverArray(wssParam, index){
+//broadcast available IP's
+function broadcastIP(data) {
+  wss.clients.forEach(function each(client) {
+    if (client.readyState === WebSocket.OPEN) {
+      //if (data.cpu !== null && data.openfd !== null)
+      client.send(data);
+      //console.log(data);
+      console.log('socket IP sent', data);
+    }
+  });
+}
 
 
 //Collect stats from all ws servers
