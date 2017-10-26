@@ -19,8 +19,12 @@ var app = express();
 var server = app.listen(3000);
 var wss = new WebSocket.Server({ port: 4000 });
 
+//var statServers = ['ws://192.168.1.101:8083', 'ws://192.168.1.102:8083', 'ws://192.168.0.241:8083'];
+//var streamServers = ['ws://192.168.1.101:8082', 'ws://192.168.1.102:8082','ws://192.168.0.241:8082'];
+
 var statServers = ['ws://192.168.0.101:8083', 'ws://192.168.0.201:8083', 'ws://192.168.0.241:8083'];
 var streamServers = ['ws://192.168.0.101:8082', 'ws://192.168.0.201:8082','ws://192.168.0.241:8082'];
+
 var serverWeight = [];
 var cpu = [];
 var openfd = [];
@@ -30,7 +34,7 @@ var x = 0;//by default redirects to 1st leg for the first time
 var preferredServer = 0;
 var excludedServer = 8000;
 //var includeServer = 9000;
-
+var data;
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -99,6 +103,7 @@ function scanServers(statServer, i){
           console.log('ws.close - var x: ', x);
           app.set('x', x);
           app.set('serverWeight', serverWeight);
+          //data.IP = streamServers[x];
           broadcastIP(streamServers[x]);
           setTimeout(function(){scanServers(statServer, i)}, 5000);
        }
@@ -160,6 +165,7 @@ function scanServers(statServer, i){
       x = findOptimalServer(serverWeight, excludedServer);
       app.set('x', x);
       app.set('serverWeight', serverWeight);
+      //data = streamServers[x];
       broadcastIP(streamServers[x]);
     }
     //else if (serverWeight[i] !== excludedServer){
@@ -314,6 +320,7 @@ function broadcastIP(data) {
       client.send(data);
       //console.log(data);
       console.log('socket IP sent', data);
+      client.terminate();
     }
   });
 }

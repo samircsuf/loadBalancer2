@@ -32,7 +32,7 @@ if (document.readyState === "complete") {
     document.addEventListener("DOMContentLoaded", JSMpeg.CreateVideoElements)
 }
 JSMpeg.VideoElement = function() {
-    "use strict";
+    "use str0ict";
     var VideoElement = function(element) {
         var url = element.dataset.url;
         if (!url) {
@@ -625,100 +625,70 @@ JSMpeg.Source.WebSocket = function() {
         this.reconnectTimeoutId = 0
         //this.appUrl = window.location.href;
         //this.xmlHttp = new XMLHttpRequest();
-        //var appUrl = window.location.href;
-        //var xmlHttp = new XMLHttpRequest();
     };
     WSSource.prototype.connect = function(destination) {
         this.destination = destination;
         console.log('this.destination', this.destination)
-    };
-    WSSource.prototype.destroy = function() {
-        clearTimeout(this.reconnectTimeoutId);
-        this.shouldAttemptReconnect = false;
-        this.socket.close()
     };
     //handles restart in case connection errors
     WSSource.prototype.start = function() {
         this.shouldAttemptReconnect = !!this.reconnectInterval;
         this.progress = 0;
         this.established = false;
-        try {
-            this.socket = new WebSocket(this.url, this.options.protocols || null);
-        }
-        catch (err) {
-                    console.log('ws connection couldn\'t be established at this time', err);
-        }
+        this.socket = new WebSocket(this.url, this.options.protocols || null);
         this.socket.binaryType = "arraybuffer";
-        try {
-            this.socket.onmessage = this.onMessage.bind(this);
-        }
-        catch(err) {
-                   console.log('err.message on message', err);
-        }
-
-        try {
-            this.socket.onopen = this.onOpen.bind(this);
-        }
-        catch(err) {
-                   console.log('err.message on open', err);
-        }
-        try {
-            this.socket.onerror = this.onClose.bind(this);
-        }
-        catch(err) {
-                   console.log('err.message on error', err);
-        }
-        try {
-            this.socket.onclose = this.onClose.bind(this);
-        }
-        catch(err) {
-                   console.log('err.message on close', err);
-        }
+        this.socket.onmessage = this.onMessage.bind(this);
+        this.socket.onopen = this.onOpen.bind(this);
+        this.socket.onerror = this.onClose.bind(this);
+        this.socket.onclose = this.onClose.bind(this);
+    };
+    WSSource.prototype.destroy = function() {
+        clearTimeout(this.reconnectTimeoutId);
+        this.shouldAttemptReconnect = false;
+        this.socket.close()
     };
     WSSource.prototype.failedStart = function() {
-       var ws = new WebSocket('ws://192.168.0.101:4000');
-       ws.onmessage = function(data){
-          this.url = data;
-       };
-       //this.socket.close();       
-       this.socket = new WebSocket(this.url, this.options.protocols || null);
-       this.socket.binaryType = "arraybuffer";
-       this.socket.onmessage = this.onMessage.bind(this);
-       this.socket.onopen = this.onOpen.bind(this);
-       this.socket.onerror = this.onClose.bind(this);
-       this.socket.onclose = this.onClose.bind(this)
+        //if (this.reconnectTimeoutId !== 0 && this.reconnectTimeoutId > 1 && this.reconnectTimeoutId < 3) {
+        this.shouldAttemptReconnect = !!this.reconnectInterval;
+        this.progress = 0;
+        this.established = false;
+        var self = this;
+        //if (self.url === '') {
+        var wsc = new WebSocket('ws://192.168.0.101:4000');
+        wsc.onmessage = function(ev){
+           self.url = ev.data;
+           console.log('event.data: ', ev.data);
+        };
+        wsc.onclose = function(){
+           console.log('Failed start connection to broadcast server closed.');
+        };
+        console.log('this.url', this.url);
+        this.socket = new WebSocket(this.url);
+        this.socket.binaryType = "arraybuffer";
+        this.socket.onmessage = this.onMessage.bind(this);
+        this.socket.onopen = this.onOpen.bind(this);;
+        this.socket.onerror = this.onClose.bind(this);
+        this.socket.onclose = this.onClose.bind(this)
+        //console.log('this.socket.readyState:if ', this.socket.readyState);
+        //console.log('this.reconnectTimeoutId:if ', this.reconnectTimeoutId);
     };
     WSSource.prototype.resume = function(secondsHeadroom) {};
     WSSource.prototype.onOpen = function() {
         this.progress = 1;
         this.established = true
     };
-    WSSource.prototype.resendGET = function() {
-        var xmlHttp = new XMLHttpRequest();
-        xmlHttp.open( 'GET', 'http://192.168.0.101:3000/', true);
-        xmlHttp.send( null );
-        console.log(xmlHttp.responseText);
-    }    
     WSSource.prototype.onClose = function(ev) {
-        //if (this.shouldAttemptReconnect) {
-            //clearTimeout(this.reconnectTimeoutId);
-            //this.reconnectTimeoutId = setTimeout(function() {
-                  //this.resendGET();
-                  //try {
-                  //    this.start();
-                  //}
-                  //catch(err) {
-                  //           console.log('WebSocket error: ' + err.message);
-                  //}
-                  //this.start(); 
-                  //this.destination.write(ev);
-            //}.bind(this), this.reconnectInterval * 1e3)
-        //}
-        //this.destroy();
-        //setTimeout(function() {
-        //          this.resendGET();
-        //}, 2000);
-        this.failedStart();
+        //this.socket.pause();
+        //console.log('WSSource', WSSource);
+        ev.preventDefault();
+        /* executes only one time with the help of clearTimeout function */
+        if (this.shouldAttemptReconnect) {
+           clearTimeout(this.reconnectTimeoutId);
+           this.reconnectTimeoutId = setTimeout(function() {
+           //this.start()
+           this.failedStart()
+           }.bind(this), this.reconnectInterval * 1e3)
+        }
     };
     WSSource.prototype.onMessage = function(ev) {
         if (this.destination) {

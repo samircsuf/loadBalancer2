@@ -5,6 +5,7 @@ var router = express.Router();
 var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
 
+//var streamServers = ['ws://192.168.1.101:8082', 'ws://192.168.1.102:8082','ws://192.168.0.241:8082'];
 var streamServers = ['ws://192.168.0.101:8082', 'ws://192.168.0.201:8082','ws://192.168.0.241:8082'];
 
 var nonElement = 8000;
