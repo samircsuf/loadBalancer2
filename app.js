@@ -4,13 +4,9 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-
+var config = require('./config.json');
+var fs = require('fs');
 var WebSocket = require('ws');
-//var WebSocket = require('./ext/reconnecting-websocket.min');
-
-//var session = require('express-session');
-//var MongoStore = require('connect-mongo')(session);
-
 var index = require('./routes/index');
 var users = require('./routes/users');
 
@@ -19,22 +15,6 @@ var app = express();
 var server = app.listen(3000);
 var wss = new WebSocket.Server({ port: 4000 });
 
-//var statServers = ['ws://192.168.1.101:8083', 'ws://192.168.1.102:8083', 'ws://192.168.0.241:8083'];
-//var streamServers = ['ws://192.168.1.101:8082', 'ws://192.168.1.102:8082','ws://192.168.0.241:8082'];
-
-var statServers = ['ws://192.168.0.101:8083', 'ws://192.168.0.201:8083', 'ws://192.168.0.241:8083'];
-var streamServers = ['ws://192.168.0.101:8082', 'ws://192.168.0.201:8082','ws://192.168.0.241:8082'];
-
-var serverWeight = [];
-var cpu = [];
-var openfd = [];
-var w1 = 0.5;
-var w2 = 0.5;
-var x = 0;//by default redirects to 1st leg for the first time
-var preferredServer = 0;
-var excludedServer = 8000;
-//var includeServer = 9000;
-var data;
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -69,7 +49,58 @@ app.use(function(err, req, res, next) {
 });
 
 //server statistics monitoring and determining index of optimal destination IP
-for (var i = 0; i <= statServers.length -1; i++) scanServers(statServers[i], i);
+//var statServers = ['ws://192.168.0.101:8083', 'ws://192.168.0.201:8083', 'ws://192.168.0.241:8083'];
+//var streamServers = ['ws://192.168.0.101:8082', 'ws://192.168.0.201:8082','ws://192.168.0.241:8082'];
+var statServers = [];
+var streamServers = [];
+var serverWeight = [];
+var cpu = [];
+var openfd = [];
+var w1 = 0.5;
+var w2 = 0.5;
+var x = 1;//by default redirects to 1st leg for the first time
+var preferredServer = 1;
+var excludedServer = 8000;
+//var includeServer = 9000;
+var data;
+
+fs.watch('./config.json', function(event, filename) {
+   if(!event)
+      scanConfigFile(config);
+   else
+      scanConfigFile(config);
+});
+
+function scanConfigFile(config) {
+   for (x in config){
+      console.log(config[x].scanIP.toString());
+      statServers[x] = JSON.stringify(config[x].scanIP);
+      console.log(config[x].streamIP.toString());
+      streamServers[x] = JSON.stringify(config[x].streamIP);
+      statServers[x] = statServers[x].replace(/"/g, '');
+      streamServers[x] = streamServers[x].replace(/"/g, '');
+   }
+   for (var i = 1; i <= statServers.length -1; i++) scanServers(statServers[i], i);
+}
+/*
+statServers.forEach(function(elem){
+   console.log('elem', elem);
+});
+fs.watchFile('./config.json',{persistent: true, interval:5000}, function(curr, prev) {
+    console.log('File Changed ...');
+    for (x in config){
+        console.log(config[x].scanIP.toString());
+        statServers[x] = JSON.stringify(config[x].scanIP);
+        console.log(config[x].streamIP.toString());
+        streamServers[x] = JSON.stringify(config[x].streamIP);
+        statServers[x] = statServers[x].replace(/"/g, '');
+        streamServers[x] = streamServers[x].replace(/"/g, '');
+    }//I think we need to call server scan again once the config.json file changes
+    for (var i = 1; i <= statServers.length -1; i++) scanServers(statServers[i], i);
+});
+*/
+
+//for (i = 1; i <= statServers.length -1; i++) scanServers(statServers[i], i);
 
 //listens server stats and determines the optimal server
 function scanServers(statServer, i){
