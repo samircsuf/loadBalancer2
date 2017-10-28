@@ -58,16 +58,18 @@ var cpu = [];
 var openfd = [];
 var w1 = 0.5;
 var w2 = 0.5;
-var x = 1;//by default redirects to 1st leg for the first time
-var preferredServer = 1;
+//var x = 1;//by default redirects to 1st leg for the first time
+var x, i;
+var preferredServer = 0;
 var excludedServer = 8000;
 //var includeServer = 9000;
 var data;
 
+scanConfigFile(config);
+
 fs.watch('./config.json', function(event, filename) {
-   if(!event)
-      scanConfigFile(config);
-   else
+   console.log('event: ', event);
+   if(event === 'change')
       scanConfigFile(config);
 });
 
@@ -80,7 +82,7 @@ function scanConfigFile(config) {
       statServers[x] = statServers[x].replace(/"/g, '');
       streamServers[x] = streamServers[x].replace(/"/g, '');
    }
-   for (var i = 1; i <= statServers.length -1; i++) scanServers(statServers[i], i);
+   for (x = 0; x <= statServers.length -1; x++) scanServers(statServers[x], x);
 }
 /*
 statServers.forEach(function(elem){
@@ -113,7 +115,7 @@ function scanServers(statServer, i){
 
   /*If any of the server is down, detect it and try to reconnect periodically and also determine optimal server based upon available servers*/
   wsc.on('close', function(event){
-    console.log('Server connection closed.');
+    console.log('Server connection closed for ', statServer);
     //check if al servers are up
     var d = serverStatus(serverWeight);
     console.log('var d:', d);
@@ -140,27 +142,18 @@ function scanServers(statServer, i){
        }
        else {
             setTimeout(function(){scanServers(statServer, i)}, 5000);
-            app.set ('d', d);
+            //app.set ('d', d);
        }
     }
     else {
          setTimeout(function(){scanServers(statServer, i)}, 5000);
+         console.log ('all server down event d: ', d);
+         app.set('d', d);
     }
     //}
  });
-/*
-  wsc.addEventListener('error', function(e) {
-          // readyState === 3 is CLOSED
-      console.log('event listener object: ', e.target.readyState);
-      if (e.target.readyState === 0) {
-        //setTimeout(function(){scanServers(statServer, i)}, 5000);
-        console.log('retrying connection for serverIP: ', statServer);
-        setTimeout(function() {scanServers(statServer, i)}, 100);
-      }
-  }, false);
-*/
   wsc.on('error', function(error) {
-    console.log('An error occurred.');
+    console.log('An error occurred for ', statServer);
     //setTimeout(function() {scanServers(statServer, i)}, 1000);
     //added from wsc.on('close')
     //setTimeout(function(){scanServers(statServer, i)}, 5000);
@@ -174,6 +167,30 @@ function scanServers(statServer, i){
     //  app.set('x', x);
     //  app.set('serverWeight', serverWeight);
     //}
+    var d = serverStatus(serverWeight);
+    console.log('var d:', d);
+    console.log('ws.on(close) Excluded server set.');
+    serverWeight.splice(i, 1, excludedServer);//insert the dummy weight for the server that is down
+    if (d === false){
+       if (i === serverWeight.length -1 && serverWeight[serverWeight.length -1] === excludedServer){//exeuted when last server is dummy server
+          x = findOptimalServer(serverWeight, excludedServer);
+          console.log('ws.close - var x: ', x);
+          app.set('x', x);
+          app.set('serverWeight', serverWeight);
+          //data.IP = streamServers[x];
+          broadcastIP(streamServers[x]);
+          setTimeout(function(){scanServers(statServer, i)}, 5000);
+       }
+       else {
+            setTimeout(function(){scanServers(statServer, i)}, 5000);
+            //app.set ('d', d);
+       }
+    }
+    else {
+         setTimeout(function(){scanServers(statServer, i)}, 5000);
+         console.log ('all server down event d: ', d);
+         app.set('d', d);
+    }
   });
 
 
