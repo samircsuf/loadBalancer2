@@ -1,10 +1,10 @@
 var express = require('express');
 var path = require('path');
-var favicon = require('serve-favicon');
+//var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var config = require('./config.json');
+//var config = require('./config.json');
 var fs = require('fs');
 var WebSocket = require('ws');
 var index = require('./routes/index');
@@ -64,222 +64,374 @@ var preferredServer = 0;
 var excludedServer = 8000;
 //var includeServer = 9000;
 var data;
+//Declare a global variable, to continue with old config.json values or not
+var isArrayEqual = true;
+var isEqualFalse = 0;
+var currentArray;
+var wscs = [];
+var wsc = [];
+var contents = fs.readFileSync('config.json');
+var config = JSON.parse(contents);
+var scannedArray = scanConfigFile(config);
+statServers = scannedArray[0];
+streamServers = scannedArray[1];
 
-scanConfigFile(config);
+setInterval (function() {
+    //if (isArrayEqual === true) {
+      contents = {};
+      config = {};
+      currentArray = [];
+      contents = fs.readFileSync('config.json');//returns buffer
+      config = JSON.parse(contents);
+      console.log('Scanning config file for changes.....');
+      //Contains the updated file information
+      currentArray = scanConfigFile(config);
+      console.log('currentArray[statServers]', currentArray[0][0]);
+      //make decision whether file has changed by looking at differences in arrays
+      isArrayEqual = setIsArrayEqual (statServers, currentArray[0]);
+      //console.log('setTimeout:IF isArrayEqual ', isArrayEqual);
+      //config = {};
+      //config = Object.assign({}, currentConfig);
 
-fs.watch('./config.json', function(event, filename) {
-   console.log('event: ', event);
-   if(event === 'change')
-      scanConfigFile(config);
-});
+      if (isArrayEqual === false){
+          console.log('Config file changed: ', isArrayEqual);
+          console.log('File content: ', config)
+      }
+      else {
+          console.log('Config file changed: ', isArrayEqual);
+          console.log('File content: ', config)
+      }
 
-function scanConfigFile(config) {
-   for (x in config){
-      console.log(config[x].scanIP.toString());
-      statServers[x] = JSON.stringify(config[x].scanIP);
-      console.log(config[x].streamIP.toString());
-      streamServers[x] = JSON.stringify(config[x].streamIP);
-      statServers[x] = statServers[x].replace(/"/g, '');
-      streamServers[x] = streamServers[x].replace(/"/g, '');
-   }
-   for (x = 0; x <= statServers.length -1; x++) scanServers(statServers[x], x);
+    //}
+}, 36000);
+
+
+/* Top Level function */
+
+runProgram();
+
+function runProgram(){
+    if (isArrayEqual === true) {
+      console.log('if.....runprogram() ', isArrayEqual);
+      console.log('statServers..........', statServers);
+      console.log('statServers.length-1........', statServers.length-1);
+      for (x = 0; x <= statServers.length -1; x++) {
+        scanServers(statServers[x], x)
+      }
+    }
+    else{
+      statServers = [];
+      statServers = replaceArray(statServers, currentArray[0]);
+      for (x in statServers){
+        console.log('updated statServers: ', statServers[x])
+      }
+      //streamServers.slice(0, streamServers.length-1);
+      streamServers = [];
+      streamServers = replaceArray(streamServers, currentArray[1]);
+      for (x in streamServers){
+        console.log('updated streamServers: ', streamServers[x])
+      }
+      console.log('else.....runprogram() ', isArrayEqual);
+      isArrayEqual = true;
+      //scanServers(statServers[x], x);
+      setTimeout(function(){runProgram()},10000);
+    }
 }
-/*
-statServers.forEach(function(elem){
-   console.log('elem', elem);
-});
-fs.watchFile('./config.json',{persistent: true, interval:5000}, function(curr, prev) {
-    console.log('File Changed ...');
-    for (x in config){
-        console.log(config[x].scanIP.toString());
-        statServers[x] = JSON.stringify(config[x].scanIP);
-        console.log(config[x].streamIP.toString());
-        streamServers[x] = JSON.stringify(config[x].streamIP);
-        statServers[x] = statServers[x].replace(/"/g, '');
-        streamServers[x] = streamServers[x].replace(/"/g, '');
-    }//I think we need to call server scan again once the config.json file changes
-    for (var i = 1; i <= statServers.length -1; i++) scanServers(statServers[i], i);
-});
-*/
 
-//for (i = 1; i <= statServers.length -1; i++) scanServers(statServers[i], i);
-
-//listens server stats and determines the optimal server
 function scanServers(statServer, i){
-  console.log('serverIP: ', statServer);
-  var wsc = new WebSocket(statServer);
+     console.log('serverIP: ', statServer);
 
-  wsc.on('open', function(event) {
-    console.log('Connection opened.', statServer);
-  });
+     wsc[i] = new WebSocket(statServer);
 
-  /*If any of the server is down, detect it and try to reconnect periodically and also determine optimal server based upon available servers*/
-  wsc.on('close', function(event){
-    console.log('Server connection closed for ', statServer);
-    //check if al servers are up
-    var d = serverStatus(serverWeight);
-    console.log('var d:', d);
+     wsc[i].on('open', openEvent);
+     function openEvent () {
+     //wsc.on('open', function(event) {
+     console.log('Connection opened for ', wsc[i].url);
+     }
+     wsc[i].on('close', closeEvent);
+     function closeEvent(){
+     //wsc.on('close', function(event){
+     console.log('Server connection closed for ', statServer);
+      //check if al servers are up
+     var d = serverStatus(serverWeight);
+     console.log('var d:', d);
 
-    //try to reconnect in 5 seconds
-    //setTimeout(function(){scanServers(statServer, i)}, 5000);//irrespective of server number, it tries to reconnect
-    console.log('ws.on(close) Excluded server set.');
-    serverWeight.splice(i, 1, excludedServer);//insert the dummy weight for the server that is down
-    //trigger point to calculate the weight
-/* If none of the server weight is equal is include server i.e. 9000, get the minimum weight. Do not need to do anything special here */
-    //if (d === true && i === serverWeight.length -1){
-    //  setTimeout(function(){scanServers(statServer, i)}, 5000);
-    //}
-    //else{
-    if (d === false){
-       if (i === serverWeight.length -1 && serverWeight[serverWeight.length -1] === excludedServer){//exeuted when last server is dummy server
-          x = findOptimalServer(serverWeight, excludedServer);
-          console.log('ws.close - var x: ', x);
-          app.set('x', x);
-          app.set('serverWeight', serverWeight);
-          //data.IP = streamServers[x];
-          broadcastIP(streamServers[x]);
-          setTimeout(function(){scanServers(statServer, i)}, 5000);
+     console.log('ws.on(close) Excluded server set.');
+     serverWeight.splice(i, 1, excludedServer);//insert the dummy weight for the server that is down
+
+     /* Reconnect upon socket close and dynamically update and connect to nodes without a server restart */
+     //1)
+     if (d === false && isArrayEqual === false){
+       //if (i===serverWeight.length-1 && serverWeight[serverWeight.length-1] === excludedServer){
+        console.log('Destroying old connections.........');
+        //a)
+        if (serverWeight.length > 1 && i === serverWeight.length-1){
+           console.log(wsc[i].url);//closes all connections
+           wsc[i].close();
+           wsc[i].removeListener('close', closeEvent);
+           console.log('Triggering isArrayEqual false on *closeEvent* -> All But last server down..........');
+           setTimeout(function(){ runProgram()}, 15000);
+           return;//stops the function here
        }
+       //b)
+       else if (serverWeight.length === 1){
+          console.log(wsc[i].url);//closes all connections
+          wsc[i].close();
+          wsc[i].removeListener('close', closeEvent);
+          console.log('Triggering isArrayEqual false on *closeEvent* -> All But last server down..........');
+          setTimeout(function(){ runProgram()}, 15000);
+          return;//stops the function here
+       }
+       //a-sub)
        else {
-            setTimeout(function(){scanServers(statServer, i)}, 5000);
-            //app.set ('d', d);
+         console.log(wsc[i].url);
+         wsc[i].close();//close individual connections *** Needs to be tested
+         wsc[i].removeListener('close', closeEvent);
        }
-    }
-    else {
-         setTimeout(function(){scanServers(statServer, i)}, 5000);
-         console.log ('all server down event d: ', d);
-         app.set('d', d);
-    }
-    //}
- });
-  wsc.on('error', function(error) {
-    console.log('An error occurred for ', statServer);
-    //setTimeout(function() {scanServers(statServer, i)}, 1000);
-    //added from wsc.on('close')
-    //setTimeout(function(){scanServers(statServer, i)}, 5000);
-
-    //serverWeight.splice(i, 1, excludedServer);//insert the dummy weight for the server that is down
-    //trigger point to calculate the weight
-/* If none of the server weight is equal is include server i.e. 9000, get the minimum weight. Do not need to do anything special here */
-    //if (i === serverWeight.length -1){
-    //  x = findOptimalServer(serverWeight, excludedServer);
-    //  console.log('ws.close - var x: ', x);
-    //  app.set('x', x);
-    //  app.set('serverWeight', serverWeight);
-    //}
-    var d = serverStatus(serverWeight);
-    console.log('var d:', d);
-    console.log('ws.on(close) Excluded server set.');
-    serverWeight.splice(i, 1, excludedServer);//insert the dummy weight for the server that is down
-    if (d === false){
-       if (i === serverWeight.length -1 && serverWeight[serverWeight.length -1] === excludedServer){//exeuted when last server is dummy server
-          x = findOptimalServer(serverWeight, excludedServer);
-          console.log('ws.close - var x: ', x);
-          app.set('x', x);
-          app.set('serverWeight', serverWeight);
-          //data.IP = streamServers[x];
-          broadcastIP(streamServers[x]);
-          setTimeout(function(){scanServers(statServer, i)}, 5000);
+     }
+     //2)
+     else if(d === false && isArrayEqual === true){
+       //a)
+       if (serverWeight.length > 1 && i === serverWeight.length-1){
+           x = findOptimalServer(serverWeight, excludedServer);
+           app.set('x', x);
+           app.set('serverWeight', serverWeight);
+           broadcastIP(streamServers[x]);
+           console.log('One or more servers down. Restarting the connection after last server is scanned....');
+           wsc[i].close();
+           wsc[i].removeListener('close', closeEvent);
+           setTimeout(function(){scanServers(statServers, i)}, 5000);
        }
+/*not required as one server will be either up or down which will be taken care by wsc.onmessage and #3) respectively
+       else if (serverWeight.length === 1){
+         x = findOptimalServer(serverWeight, excludedServer);
+         app.set('x', x);
+         app.set('serverWeight', serverWeight);
+         broadcastIP(streamServers[x]);
+         wsc[i].close();
+         wsc[i].removeListener('close', closeEvent);
+         setTimeout(function(){scanServers(statServers, i)}, 5000);
+       }*/
+       //a-sub)
        else {
-            setTimeout(function(){scanServers(statServer, i)}, 5000);
-            //app.set ('d', d);
+           console.log('One or more servers down. Restarting the connection to all but last server....');
+           wsc[i].close();
+           wsc[i].removeListener('close', closeEvent);
+           setTimeout(function(){scanServers(statServers, i)}, 5000);
        }
-    }
-    else {
-         setTimeout(function(){scanServers(statServer, i)}, 5000);
-         console.log ('all server down event d: ', d);
+     }
+     //3)
+     else if(d === true && isArrayEqual === false){
+       //if (i === serverWeight.length-1 && serverWeight[serverWeight.length-1] === excludedServer){
+         console.log('Destroying old connections.........');
+         console.log('Current index is ', i);
+         if (serverWeight.length > 1 && i === serverWeight.length-1){//restarts connection with new config if there are more than one server in the config
+             console.log(wsc[i].url);
+             wsc[i].close();
+             wsc[i].removeListener('close', closeEvent);
+             console.log('Triggering isArrayEqual false on *closeEvent* -> All servers down..........');
+             setTimeout(function(){runProgram()}, 15000);
+             return;
+         }
+         else if (serverWeight.length === 1){//restarts connection with new config if there is only one server in the config
+             console.log(wsc[i].url);
+             wsc[i].close();
+             wsc[i].removeListener('close', closeEvent);
+             console.log('Triggering isArrayEqual false on *closeEvent* -> All servers down..........');
+             setTimeout(function(){runProgram()}, 15000);
+             return;
+       }
+       else {//closes all but last server connection
+         console.log(wsc[i].url);
+         wsc[i].close();
+         wsc[i].removeListener('close', closeEvent);
+       }
+     }
+     //4)
+     else if(d === true && isArrayEqual === true){
+       //if (i === serverWeight.length-1 && serverWeight[serverWeight.length-1] === excludedServer){
+       if (serverWeight.length > 1 && i === serverWeight.length-1){//restarts connection to last server
+           app.set('d', d);
+           console.log('All servers down. Restarting the connection after last server is scanned....')
+           wsc[i].close();//close individual connections *** Needs to be tested
+           wsc[i].removeListener('close', closeEvent);
+           setTimeout(function(){scanServers(statServer, i)}, 5000);
+           return;
+       }
+       else if (serverWeight.length === 1){//restarts connection to first server
          app.set('d', d);
+         console.log('All servers(more than one) down. Restarting the connection after one server is scanned....')
+         wsc[i].close();//close individual connections *** Needs to be tested
+         wsc[i].removeListener('close', closeEvent);
+         setTimeout(function(){scanServers(statServer, i)}, 5000);
+       }
+       else{////restarts connection to all but last server
+         console.log('All servers (one) down. Restarting the connection after last but all servers scanned....')
+         wsc[i].close();//close individual connections *** Needs to be tested
+         wsc[i].removeListener('close', closeEvent);
+         setTimeout(function(){scanServers(statServer, i)}, 5000);
+         return;
+       }
+     }
+     //Final else
+     console.log('Most conditions are tested and *** Add *** more conditions if found after testing.........')
+     }
+
+     wsc[i].on('error', errorEvent);
+     function errorEvent(){
+     //wsc.on('error', function(error) {
+     console.log('An error occurred for ', statServer);
+     }
+
+     wsc[i].on('message', messageEvent);
+     function messageEvent(data){
+        //wsc.on('message', function (data){
+        //Parse the incoming JSON object and extract relevant pivots
+        console.log('cpu'+i+': '+ parseInt(JSON.parse(data).cpu));
+        console.log('openfd'+i+': '+ parseInt(JSON.parse(data).openfd));
+        cpu[i]= parseInt(JSON.parse(data).cpu);
+        openfd[i] = parseInt(JSON.parse(data).openfd);
+
+        serverWeight[i] = cpu[i] * w1 + openfd[i] * w2;
+        console.log('serverWeight['+i+']'+ serverWeight[i]);
+        //find a trigger point like when to calculate index
+        /* If none of the server weight is equal to exclude server i.e. 8000, get the minimum weight */
+        if (isArrayEqual === false){
+            console.log('Destroying old connections');
+            if (serverWeight.length > 1 && i === serverWeight.length -1 && serverWeight[serverWeight.length -1] !== excludedServer){//if last server weight NOT equal to excludedServer and it is the last server
+                                                                                                      //=> if last server isnt down and reached last server weight calculation, determine optimal server
+                                                                                                      //executed when last server is not dummy server
+                console.log(wsc[i].url);
+                wsc[i].close();
+                wsc[i].removeEventListener('message', messageEvent);
+                console.log('Triggering isArrayEqual false on *messageEvent* -> All servers(more than one) up..........');
+                setTimeout(function(){runProgram()}, 15000);
+                return;
+            }
+            else if (serverWeight.length === 1){
+                console.log(wsc[i].url);
+                wsc[i].close();
+                wsc[i].removeEventListener('message', messageEvent);
+                console.log('Triggering isArrayEqual false on *messageEvent* -> All servers(only one) up..........');
+                setTimeout(function(){runProgram()}, 15000);
+                return;
+            }
+            else{
+                console.log(wsc[i].url);
+                wsc[i].close();
+                wsc[i].removeEventListener('message', messageEvent);
+            }
+          }
+        else{
+           x = findOptimalServer(serverWeight, excludedServer);
+           app.set('x', x);
+           app.set('serverWeight', serverWeight);
+            //data = streamServers[x];
+           broadcastIP(streamServers[x]);
+        }
+      }
+}//scanServers() ends here
+
+function setIsArrayEqual (oldArray, newArray){
+    //isEqualFalse = 0;
+    console.log('old array...');
+    for (i in oldArray) console.log(oldArray[i]);
+
+    console.log('new array...');
+    for (i in newArray) console.log(newArray[i]);
+
+    if(newArray.length !== oldArray.length){
+        //isEqualFalse++;
+        return false;
     }
-  });
-
-
-  /*If all the servers are up, determine the optimal server*/
-  wsc.on('message', function (data){
-    //console.log('message received', data);
-    //Parse the incoming JSON object and extract relevant pivots
-    console.log('cpu'+i+': '+ parseInt(JSON.parse(data).cpu));
-    console.log('openfd'+i+': '+ parseInt(JSON.parse(data).openfd));
-    cpu[i]= parseInt(JSON.parse(data).cpu);
-    openfd[i] = parseInt(JSON.parse(data).openfd);
-
-    serverWeight[i] = cpu[i] * w1 + openfd[i] * w2;
-    console.log('serverWeight['+i+']'+ serverWeight[i]);
-//find a trigger point like when to calculate index
-/* If none of the server weight is equal to exclude server i.e. 8000, get the minimum weight */
-    if (i === serverWeight.length -1 && serverWeight[serverWeight.length -1] !== excludedServer){//if last server weight NOT equal to excludedServer and it is the last server
-                                                                                                //=> if last server isnt down and reached last server weight calculation, determine optimal server
-                                                                                                //executed when last server is not dummy server
-      x = findOptimalServer(serverWeight, excludedServer);
-      app.set('x', x);
-      app.set('serverWeight', serverWeight);
-      //data = streamServers[x];
-      broadcastIP(streamServers[x]);
+    for(var i = oldArray.length; i--;) {
+        if(oldArray[i] !== newArray[i]){
+          //isEqualFalse++;
+          return false;
+        }
     }
-    //else if (serverWeight[i] !== excludedServer){
-    //  x = findOptimalServer(serverWeight, excludedServer);
-    //  app.set('x', x);
-    //}
-    //this block needs modification
-    //else{//when last server is down, just calculates optimal server whenever any server reports a statistics+> right now every call to all other server even when all servers are up going to this block
-    //  x = findOptimalServer(serverWeight, excludedServer);
-    //  app.set('x', x);
-      //console.log('Waiting for all server to be up.')
-    //}
-  });
+    return true;
+}
+
+function scanConfigFile(tempConfig) {
+   var scanIP = [],
+       streamIP = [];
+   for (x in tempConfig){
+      console.log(tempConfig[x].scanIP);
+      scanIP[x] = JSON.stringify(tempConfig[x].scanIP);
+      console.log(tempConfig[x].streamIP);
+      streamIP[x] = JSON.stringify(tempConfig[x].streamIP);
+      scanIP[x] = scanIP[x].replace(/"/g, '');
+      streamIP[x] = streamIP[x].replace(/"/g, '');
+   }
+   return [scanIP, streamIP];
+}
+
+function replaceArray(statServers, newArray) {
+    console.log('Before : statServers[0]'+ statServers[0] + ' newArray:'+ newArray);
+
+    statServers.slice(0, statServers.length);
+    for (var i = 0; i <= newArray.length - 1; i++) {
+      statServers[i] = newArray[i]
+    }
+    console.log('New content after replacing...');
+    for (x in statServers) {
+      console.log(statServers[x])
+    }
+    return statServers;
 }
 
 //finds the minimum weight server or optimal server when servers have differential or equal weight
 function findOptimalServer(serverWeight, index){
-  console.log('index: ', index);
-  var idu = checkUndefinedServer(serverWeight);//returns true if there is atleast one undefined else, returns false
+    console.log('index: ', index);
+    var idu = checkUndefinedServer(serverWeight);//returns true if there is atleast one undefined else, returns false
 
-  var idex = checkExcludedServer(serverWeight, index);//returns true if there is one excluded server
-  console.log('idex val: ', idex);
-  //All servers are up, this code block gets executed
-  if(idu === true){//this scenario arises when server starts up
-    x = preferredServer;
-    console.log('Atleast one server undefined- var x:', x);
-  }
-  else if(idex === false){//when all servers up
-    var ide = checkEqualityOfServer(serverWeight, index);
-    if (ide === true){
-      x = Math.floor(Math.random() * serverWeight.length);
-      console.log('All servers up. Random server- var x', x);
+    var idex = checkExcludedServer(serverWeight, index);//returns true if there is one excluded server
+    console.log('idex val: ', idex);
+    //All servers are up, this code block gets executed
+    if(idu === true){//this scenario arises when server starts up
+      x = preferredServer;
+      console.log('Atleast one server undefined- var x:', x);
     }
-    else{
-      x = serverWeight.indexOf(Math.min.apply(Math, serverWeight));
-      if (x === -1){
-        x = preferredServer;
-        console.log('All servers up. Min weight server- var x=-1', x);
-      }
-      else
-        console.log('All servers up. Min weight server- var x', x);
-    }
-  }
-  //one or more server goes down, this code block gets executed
-  else if(idex === true){
-
-    ide = checkEqualityOfServer(serverWeight, index);
-    if (ide === true){
-      x = findRandomServer(serverWeight, index);
-      console.log('one or more servers down. Random server- var x', x);
-    }
-    else{
-      x = findMinWeightServer(serverWeight, index);
-      if (x === -1){
-        x = preferredServer;
-        console.log('one or more servers down. Min weight server- var x=-1', x);
+    else if(idex === false){//when all servers up
+      var ide = checkEqualityOfServer(serverWeight, index);
+      if (ide === true){
+        x = Math.floor(Math.random() * serverWeight.length);
+        console.log('All servers up. Random server- var x', x);
       }
       else{
-        console.log('one or more servers down. Min weight server- var x', x);
+        x = serverWeight.indexOf(Math.min.apply(Math, serverWeight));
+        if (x === -1){
+          x = preferredServer;
+          console.log('All servers up. Min weight server- var x=-1', x);
+        }
+        else
+          console.log('All servers up. Min weight server- var x', x);
       }
     }
-  }
-  else
-    console.log('No Additional conditions found as of now.');
+    //one or more server goes down, this code block gets executed
+    else if(idex === true){
 
-  return x;
+      ide = checkEqualityOfServer(serverWeight, index);
+      if (ide === true){
+        x = findRandomServer(serverWeight, index);
+        console.log('one or more servers down. Random server- var x', x);
+      }
+      else{
+        x = findMinWeightServer(serverWeight, index);
+        if (x === -1){
+          x = preferredServer;
+          console.log('one or more servers down. Min weight server- var x=-1', x);
+        }
+        else{
+          console.log('one or more servers down. Min weight server- var x', x);
+        }
+      }
+    }
+    else
+      console.log('No Additional conditions found as of now.');
+
+    return x;
 }
 
 //finds random server for excluded server case when other server weights are equal
@@ -372,36 +524,5 @@ function broadcastIP(data) {
     }
   });
 }
-
-
-//Collect stats from all ws servers
-//websocket message is an async request-response type, so we need to run it as soon as the server starts
-//And then calculate the weight, suitable destination server address and store it in a file/object.
-//When any client request comes, it reads the file/object and routes to that IP.
-
-
-//mongo-connect session
-/*
-app.use(session({
-    secret: 'password1',
-    saveUninitialized: false, // don't create session until something stored
-    resave: false, //don't save session if unmodified
-    store: new MongoStore({
-        url: 'mongodb://127.0.0.1/test',
-        collection: 'sessions',
-        ttl: 14 * 24 * 60 * 60, // = 14 days. Default
-        touchAfter: 24 * 60 * 60 // time period in seconds for refresh sessions
-    })
-}));
-
-app.use(session({
-    store: new MongoStore({
-      url: 'mongodb://localhost:27017/test',
-      collection: 'sessions',
-      ttl: 14 * 24 * 60 * 60 // = 14 days. Default
-    })
-}));
-*/
-
 
 module.exports = app;

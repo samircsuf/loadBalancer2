@@ -18,5 +18,25 @@
     "morgan": "~1.8.1",
     "serve-favicon": "~2.4.2",
     "ws": "^3.1.0"
-  }
+  },
+  "description": "raspi lb",
+  "main": "app.js",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samircsuf/loadBalancer2.git"
+  },
+  "keywords": [
+    "raspi",
+    "node",
+    "js",
+    "express",
+    "js"
+  ],
+  "author": "Samir Mandal",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/samircsuf/loadBalancer2/issues"
+  },
+  "homepage": "https://github.com/samircsuf/loadBalancer2#readme"
 }

@@ -666,7 +666,7 @@ JSMpeg.Source.WebSocket = function() {
         this.socket = new WebSocket(this.url);
         this.socket.binaryType = "arraybuffer";
         this.socket.onmessage = this.onMessage.bind(this);
-        this.socket.onopen = this.onOpen.bind(this);;
+        this.socket.onopen = this.onOpen.bind(this);
         this.socket.onerror = this.onClose.bind(this);
         this.socket.onclose = this.onClose.bind(this)
         //console.log('this.socket.readyState:if ', this.socket.readyState);
@@ -696,7 +696,7 @@ JSMpeg.Source.WebSocket = function() {
         }
     };
     WSSource.prototype.resendHTTPGET = function() {
-        this.xmlHttp.onreadystatechange = function() { 
+        this.xmlHttp.onreadystatechange = function() {
         if (this.xmlHttp.readyState == 4 && xmlHttp.status == 200)
             callback(xmlHttp.responseText);
         };
