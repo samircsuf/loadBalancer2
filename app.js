@@ -200,7 +200,7 @@ function scanServers(statServer, i){
            console.log('One or more servers down. Restarting the connection after last server is scanned....');
            wsc[i].close();
            wsc[i].removeListener('close', closeEvent);
-           setTimeout(function(){scanServers(statServers, i)}, 5000);
+           setTimeout(function(){scanServers(statServer, i)}, 5000);
        }
 /*not required as one server will be either up or down which will be taken care by wsc.onmessage and #3) respectively
        else if (serverWeight.length === 1){
@@ -217,7 +217,7 @@ function scanServers(statServer, i){
            console.log('One or more servers down. Restarting the connection to all but last server....');
            wsc[i].close();
            wsc[i].removeListener('close', closeEvent);
-           setTimeout(function(){scanServers(statServers, i)}, 5000);
+           setTimeout(function(){scanServers(statServer, i)}, 5000);
        }
      }
      //3)
