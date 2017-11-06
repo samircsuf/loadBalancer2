@@ -64,7 +64,7 @@ var preferredServer = 0;
 var excludedServer = 8000;
 //var includeServer = 9000;
 var data;
-var m = 0;//m=1 indicates if messageEvent has closed connection
+//var m = 0;//m=1 indicates if messageEvent has closed connection
 //Declare a global variable, to continue with old config.json values or not
 var isArrayEqual = true;
 var isEqualFalse = 0;
@@ -164,21 +164,15 @@ function scanServers(statServer, i){
      //1)
      if (d === false && isArrayEqual === false){
        //if (i===serverWeight.length-1 && serverWeight[serverWeight.length-1] === excludedServer){
-        console.log('Destroying old connections.........');
+        console.log('Destroying old connections at closeEvent.........');
         //a)
         if (serverWeight.length > 1 && i === serverWeight.length-1){
            console.log(wsc[i].url);//closes all connections
            wsc[i].close();
            wsc[i].removeListener('close', closeEvent);
            console.log('Triggering isArrayEqual false on *closeEvent* -> All But last server down..........');
-           if(m===1){
-             m = 0;
-             return;
-           }
-           else {
-             setTimeout(function(){ runProgram()}, 15000);
-             return;//stops the function here
-           }
+           setTimeout(function(){ runProgram()}, 15000);
+           return;//stops the function here
        }
        //b)
        else if (serverWeight.length === 1){
@@ -186,14 +180,8 @@ function scanServers(statServer, i){
           wsc[i].close();
           wsc[i].removeListener('close', closeEvent);
           console.log('Triggering isArrayEqual false on *closeEvent* -> All But last server down..........');
-          if(m===1){
-            m = 0;
-            return;
-          }
-          else {
-            setTimeout(function(){ runProgram()}, 15000);
-            return;//stops the function here
-          }
+          setTimeout(function(){ runProgram()}, 15000);
+          return;//stops the function here
        }
        //a-sub)
        else {
@@ -244,14 +232,8 @@ function scanServers(statServer, i){
              wsc[i].removeListener('close', closeEvent);
              console.log('Triggering isArrayEqual false on *closeEvent* -> All servers down..........');
              //if connection is already closed by messageEvent
-             if (m === 1){
-               m = 0;
-               return;
-             }
-             else {
-               setTimeout(function(){runProgram()}, 15000);
-               return;
-             }
+             setTimeout(function(){runProgram()}, 15000);
+             return;
          }
          else if (serverWeight.length === 1){//restarts connection with new config if there is only one server in the config
              console.log(wsc[i].url);
@@ -325,8 +307,8 @@ function scanServers(statServer, i){
                 wsc[i].close();
                 wsc[i].removeEventListener('message', messageEvent);
                 console.log('Triggering isArrayEqual false on *messageEvent* -> All servers(more than one) up..........');
-                m = 1;
-                setTimeout(function(){runProgram()}, 15000);
+                //closeEvent();
+                //setTimeout(function(){runProgram()}, 15000);
                 return;
             }
             else if (serverWeight.length === 1){
@@ -334,7 +316,7 @@ function scanServers(statServer, i){
                 wsc[i].close();
                 wsc[i].removeEventListener('message', messageEvent);
                 console.log('Triggering isArrayEqual false on *messageEvent* -> All servers(only one) up..........');
-                setTimeout(function(){runProgram()}, 15000);
+                //setTimeout(function(){runProgram()}, 15000);
                 return;
             }
             else{
