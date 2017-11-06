@@ -165,8 +165,10 @@ function scanServers(statServer, i){
      if (d === false && isArrayEqual === false){
        //if (i===serverWeight.length-1 && serverWeight[serverWeight.length-1] === excludedServer){
         console.log('Destroying old connections at closeEvent.........');
+        console.log('serverWeight.length ', serverWeight.length);
         //a)
-        if (serverWeight.length > 1 && i === serverWeight.length-1){
+        //if (serverWeight.length > 1 && i === serverWeight.length-1){
+        if (i === serverWeight.length-1){
            console.log(wsc[i].url);//closes all connections
            wsc[i].close();
            wsc[i].removeListener('close', closeEvent);
@@ -185,6 +187,7 @@ function scanServers(statServer, i){
        }
        //a-sub)
        else {
+         console.log('DEBUG: Investigate.....');
          console.log(wsc[i].url);
          wsc[i].close();//close individual connections *** Needs to be tested
          wsc[i].removeListener('close', closeEvent);
@@ -193,7 +196,8 @@ function scanServers(statServer, i){
      //2)
      else if(d === false && isArrayEqual === true){
        //a)
-       if (serverWeight.length > 1 && i === serverWeight.length-1){
+       //if (serverWeight.length > 1 && i === serverWeight.length-1){
+       if (i === serverWeight.length-1){
            x = findOptimalServer(serverWeight, excludedServer);
            app.set('x', x);
            app.set('serverWeight', serverWeight);
@@ -226,7 +230,8 @@ function scanServers(statServer, i){
        //if (i === serverWeight.length-1 && serverWeight[serverWeight.length-1] === excludedServer){
          console.log('Destroying old connections at closeEvent.........');
          console.log('Current index is ', i);
-         if (serverWeight.length > 1 && i === serverWeight.length-1){//restarts connection with new config if there are more than one server in the config
+         //if (serverWeight.length > 1 && i === serverWeight.length-1){//restarts connection with new config if there are more than one server in the config
+         if (i === serverWeight.length-1){
              console.log(wsc[i].url);
              wsc[i].close();
              wsc[i].removeListener('close', closeEvent);
@@ -244,15 +249,16 @@ function scanServers(statServer, i){
              return;
        }
        else {//closes all but last server connection
-         console.log(wsc[i].url);
-         wsc[i].close();
-         wsc[i].removeListener('close', closeEvent);
+           console.log(wsc[i].url);
+           wsc[i].close();
+           wsc[i].removeListener('close', closeEvent);
        }
      }
      //4)
      else if(d === true && isArrayEqual === true){
        //if (i === serverWeight.length-1 && serverWeight[serverWeight.length-1] === excludedServer){
-       if (serverWeight.length > 1 && i === serverWeight.length-1){//restarts connection to last server
+       //if (serverWeight.length > 1 && i === serverWeight.length-1){//restarts connection to last server
+       if (i === serverWeight.length-1){
            app.set('d', d);
            console.log('All servers down. Restarting the connection after last server is scanned....')
            wsc[i].close();//close individual connections *** Needs to be tested
@@ -300,7 +306,7 @@ function scanServers(statServer, i){
         /* If none of the server weight is equal to exclude server i.e. 8000, get the minimum weight */
         if (isArrayEqual === false){
             console.log('Destroying old connections at messageEvent............');
-            if (serverWeight.length > 1 && i === serverWeight.length -1 && serverWeight[serverWeight.length -1] !== excludedServer){//if last server weight NOT equal to excludedServer and it is the last server
+            if (i === serverWeight.length -1 && serverWeight[serverWeight.length -1] !== excludedServer){//if last server weight NOT equal to excludedServer and it is the last server
                                                                                                       //=> if last server isnt down and reached last server weight calculation, determine optimal server
                                                                                                       //executed when last server is not dummy server
                 console.log(wsc[i].url);
