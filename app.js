@@ -143,7 +143,7 @@ function scanServers(statServer, i){
      //wsc.on('close', function(event){
      console.log('Server connection closed for ', statServer);
       //check if al servers are up
-     var d = serverStatus(serverWeight);
+     d = serverStatus(serverWeight);
      console.log('var d:', d);
 
      console.log('ws.on(close) Excluded server set.');
@@ -247,7 +247,7 @@ function scanServers(statServer, i){
      else if(d === true && isArrayEqual === true) {//need to check why is it setting and broadcasting
        //if (i === serverWeight.length-1 && serverWeight[serverWeight.length-1] === excludedServer){
        //if (serverWeight.length > 1 && i === serverWeight.length-1){//restarts connection to last server
-       if (i === statServers.length-1 && dMessageEvent == true){
+       if (i === statServers.length-1 && dMessageEvent === true){
            app.set('d', d);
            console.log('All servers down. Restarting the connection after last server is scanned....')
            wsc[i].close();//close individual connections *** Needs to be tested
@@ -291,6 +291,7 @@ function scanServers(statServer, i){
 
         serverWeight[i] = cpu[i] * w1 + openfd[i] * w2;
         console.log('serverWeight['+i+']'+ serverWeight[i]);
+        d = serverStatus(serverWeight);
         //find a trigger point like when to calculate index
         /* If none of the server weight is equal to exclude server i.e. 8000, get the minimum weight */
         if (isArrayEqual === false){
@@ -326,6 +327,7 @@ function scanServers(statServer, i){
            x = findOptimalServer(serverWeight, excludedServer);
            app.set('x', x);
            app.set('serverWeight', serverWeight);
+           app.set('d', d);
             //data = streamServers[x];
            broadcastIP(streamServers[x]);
            dMessageEvent = true;//indicates intermediate status that system config are not changed currently
