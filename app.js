@@ -142,13 +142,11 @@ function scanServers(statServer, i){
      function closeEvent(){
      //wsc.on('close', function(event){
      console.log('Server connection closed for ', statServer);
-      //check if al servers are up
-     d = serverStatus(serverWeight);
-     console.log('var d:', d);
-
      console.log('ws.on(close) Excluded server set.');
      serverWeight.splice(i, 1, excludedServer);//insert the dummy weight for the server that is down
-
+     //check if al servers are up
+     d = serverStatus(serverWeight);
+     console.log('var d:', d);
      /* Reconnect upon socket close and dynamically update and connect to nodes without a server restart */
      //1)
      if (d === false && isArrayEqual === false){
