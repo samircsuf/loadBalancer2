@@ -177,14 +177,14 @@ function scanServers(statServer, i){
            return;//stops the function here
        }
        //b)
-       else if (statServers.length === 1){
+       /*else if (statServers.length === 1){
           console.log(wsc[i].url);//closes all connections
           wsc[i].close();
           wsc[i].removeListener('close', closeEvent);
           console.log('Triggering isArrayEqual false on *closeEvent* -> All But last server down..........');
           setTimeout(function(){ runProgram()}, 15000);
           return;//stops the function here
-       }
+       }*/
        //a-sub)
        else {
          console.log('DEBUG: Investigate.....');
@@ -240,14 +240,14 @@ function scanServers(statServer, i){
              setTimeout(function(){runProgram()}, 15000);
              return;
          }
-         else if (statServers.length === 1){//restarts connection with new config if there is only one server in the config
+         /*else if (statServers.length === 1){//restarts connection with new config if there is only one server in the config
              console.log(wsc[i].url);
              wsc[i].close();
              wsc[i].removeListener('close', closeEvent);
              console.log('Triggering isArrayEqual false on *closeEvent* -> All servers down..........');
              setTimeout(function(){runProgram()}, 15000);
              return;
-       }
+       }*/
        else {//closes all but last server connection
            console.log(wsc[i].url);
            wsc[i].close();
@@ -266,13 +266,13 @@ function scanServers(statServer, i){
            setTimeout(function(){scanServers(statServer, i)}, 5000);
            return;
        }
-       else if (statServers.length === 1){//restarts connection to first server
-         app.set('d', d);
+       /*else if (statServers.length === 1){//restarts connection to first server
+         //app.set('d', d);
          console.log('All servers(more than one) down. Restarting the connection after one server is scanned....')
          wsc[i].close();//close individual connections *** Needs to be tested
          wsc[i].removeListener('close', closeEvent);
          setTimeout(function(){scanServers(statServer, i)}, 5000);
-       }
+       }*/
        else{////restarts connection to all but last server
          console.log('All servers (one) down. Restarting the connection after last but all servers scanned....')
          wsc[i].close();//close individual connections *** Needs to be tested
