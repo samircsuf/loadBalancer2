@@ -3,30 +3,16 @@ extends layout
 block content
   h1= title
   p Welcome to #{title}
-  p error #{errorMsg}
+  p #{errorMsg}
 
   body
     canvas#video-canvas1
     script(type='text/javascript', src='/javascripts/jsmpeg.js')
     script(type='text/javascript').
       var canvas1 = document.getElementById('video-canvas1');
-      //var url1 = 'ws://'+document.location.hostname+':8082/';
-      /*
-      try {
-          var wsUrl = !{JSON.stringify(url)};
-          var player1 = new JSMpeg.Player(wsUrl, {canvas: canvas1});
-          console.log('player1', player1);
-      }
-      catch(err) {
-                 console.log('err', err);
-                 document.getElementById('error-msg').innerHTML = err.message;
-      }*/
       var wsUrl = !{JSON.stringify(url)};
       var player1 = new JSMpeg.Player(wsUrl, {canvas: canvas1});
       if (player1.source.socket.readyState === 3){
          console.log('player1.source.socket.readyState', player1.source.socket.readyState);
          document.getElementById('error-msg').innerHTML = err.message;
       }
-      //player1.source.socket.onclose(function(event){
-        //console.log('event: ',event);
-      //});

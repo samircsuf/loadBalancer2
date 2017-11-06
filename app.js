@@ -1,10 +1,8 @@
 var express = require('express');
 var path = require('path');
-//var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-//var config = require('./config.json');
 var fs = require('fs');
 var WebSocket = require('ws');
 var index = require('./routes/index');
@@ -19,7 +17,6 @@ var wss = new WebSocket.Server({ port: 4000 });
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
-// uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
 app.use(bodyParser.json());
@@ -48,9 +45,6 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-//server statistics monitoring and determining index of optimal destination IP
-//var statServers = ['ws://192.168.0.101:8083', 'ws://192.168.0.201:8083', 'ws://192.168.0.241:8083'];
-//var streamServers = ['ws://192.168.0.101:8082', 'ws://192.168.0.201:8082','ws://192.168.0.241:8082'];
 var statServers = [];
 var streamServers = [];
 var serverWeight = [];
@@ -58,24 +52,22 @@ var cpu = [];
 var openfd = [];
 var w1 = 0.5;
 var w2 = 0.5;
-//var x = 1;//by default redirects to 1st leg for the first time
 var x, i;
 var preferredServer = 0;
 var excludedServer = 8000;
-//var includeServer = 9000;
 var data;
 var dMessageEvent = true;//false indicates if dMessageEvent originated from messageEvent
 //Declare a global variable, to continue with old config.json values or not
 var isArrayEqual = true;
 var isEqualFalse = 0;
 var currentArray;
-var wscs = [];
 var wsc = [];
 var contents = fs.readFileSync('config.json');
 var config = JSON.parse(contents);
 var scannedArray = scanConfigFile(config);
 statServers = scannedArray[0];
 streamServers = scannedArray[1];
+app.set('streamServers', streamServers);
 
 setInterval (function() {
     //if (isArrayEqual === true) {
@@ -90,9 +82,6 @@ setInterval (function() {
       console.log('currentArray[statServers]', currentArray[0][0]);
       //make decision whether file has changed by looking at differences in arrays
       isArrayEqual = setIsArrayEqual (statServers, currentArray[0]);
-      //console.log('setTimeout:IF isArrayEqual ', isArrayEqual);
-      //config = {};
-      //config = Object.assign({}, currentConfig);
 
       if (isArrayEqual === false){
           console.log('Config file changed: ', isArrayEqual);
@@ -103,7 +92,6 @@ setInterval (function() {
           console.log('File content: ', config)
       }
 
-    //}
 }, 36000);
 
 
@@ -132,6 +120,7 @@ function runProgram(){
       for (x in streamServers){
         console.log('updated streamServers: ', streamServers[x])
       }
+      app.set('streamServers', streamServers);
       console.log('else.....runprogram() ', isArrayEqual);
       isArrayEqual = true;
       //scanServers(statServers[x], x);
@@ -312,7 +301,7 @@ function scanServers(statServer, i){
                 console.log(wsc[i].url);
                 wsc[i].close();
                 wsc[i].removeEventListener('message', messageEvent);
-                dMessageEvent = false;//false indicates intermediate status that system config is being renewed par config.json changes
+                dMessageEvent = false;//false indicates intermediate status, that system config is being renewed on par with config.json changes
                 console.log('Triggering isArrayEqual false on *messageEvent* -> All servers(more than one) up..........');
                 //closeEvent();
                 //setTimeout(function(){runProgram()}, 15000);
@@ -339,7 +328,7 @@ function scanServers(statServer, i){
            app.set('serverWeight', serverWeight);
             //data = streamServers[x];
            broadcastIP(streamServers[x]);
-           dMessageEvent = true;//indicates intermediate status that system config are not being currently
+           dMessageEvent = true;//indicates intermediate status that system config are not changed currently
         }
       }
 }//scanServers() ends here
