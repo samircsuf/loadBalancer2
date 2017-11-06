@@ -64,7 +64,7 @@ var preferredServer = 0;
 var excludedServer = 8000;
 //var includeServer = 9000;
 var data;
-//var m = 0;//m=1 indicates if messageEvent has closed connection
+var dMessageEvent = true;//false indicates if dMessageEvent originated from messageEvent
 //Declare a global variable, to continue with old config.json values or not
 var isArrayEqual = true;
 var isEqualFalse = 0;
@@ -255,10 +255,10 @@ function scanServers(statServer, i){
        }
      }
      //4)
-     else if(d === true && isArrayEqual === true){
+     else if(d === true && isArrayEqual === true) {//need to check why is it setting and broadcasting
        //if (i === serverWeight.length-1 && serverWeight[serverWeight.length-1] === excludedServer){
        //if (serverWeight.length > 1 && i === serverWeight.length-1){//restarts connection to last server
-       if (i === statServers.length-1){
+       if (i === statServers.length-1 && dMessageEvent == true){
            app.set('d', d);
            console.log('All servers down. Restarting the connection after last server is scanned....')
            wsc[i].close();//close individual connections *** Needs to be tested
@@ -306,25 +306,26 @@ function scanServers(statServer, i){
         /* If none of the server weight is equal to exclude server i.e. 8000, get the minimum weight */
         if (isArrayEqual === false){
             console.log('Destroying old connections at messageEvent............');
-            if (i === statServers.length -1 && serverWeight[statServers.length -1] !== excludedServer){//if last server weight NOT equal to excludedServer and it is the last server
+            if (i === statServers.length -1){//if last server weight NOT equal to excludedServer and it is the last server
                                                                                                       //=> if last server isnt down and reached last server weight calculation, determine optimal server
                                                                                                       //executed when last server is not dummy server
                 console.log(wsc[i].url);
                 wsc[i].close();
                 wsc[i].removeEventListener('message', messageEvent);
+                dMessageEvent = false;//false indicates intermediate status that system config is being renewed par config.json changes
                 console.log('Triggering isArrayEqual false on *messageEvent* -> All servers(more than one) up..........');
                 //closeEvent();
                 //setTimeout(function(){runProgram()}, 15000);
                 return;
             }
-            else if (statServers.length === 1){
+            /*else if (statServers.length === 1){g
                 console.log(wsc[i].url);
                 wsc[i].close();
                 wsc[i].removeEventListener('message', messageEvent);
                 console.log('Triggering isArrayEqual false on *messageEvent* -> All servers(only one) up..........');
                 //setTimeout(function(){runProgram()}, 15000);
                 return;
-            }
+            }*/
             else{
                 console.log(wsc[i].url);
                 wsc[i].close();
@@ -338,6 +339,7 @@ function scanServers(statServer, i){
            app.set('serverWeight', serverWeight);
             //data = streamServers[x];
            broadcastIP(streamServers[x]);
+           dMessageEvent = true;//indicates intermediate status that system config are not being currently
         }
       }
 }//scanServers() ends here

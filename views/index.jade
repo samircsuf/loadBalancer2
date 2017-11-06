@@ -4,9 +4,8 @@ block content
   h1= title
   p Welcome to #{title}
   p error #{errorMsg}
-  
+
   body
-    error#error-msg
     canvas#video-canvas1
     script(type='text/javascript', src='/javascripts/jsmpeg.js')
     script(type='text/javascript').
@@ -31,4 +30,3 @@ block content
       //player1.source.socket.onclose(function(event){
         //console.log('event: ',event);
       //});
-      

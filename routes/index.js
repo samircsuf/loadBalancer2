@@ -13,28 +13,6 @@ var serverWeight = [];
 var finalIndex;
 var d = 0;
 var x;
-//connect-mongo Session
-/*router.use(session({
-    secret: 'password1',
-    //saveUninitialized: false, // don't create session until something stored
-    //resave: false, //don't save session if unmodified
-    store: new MongoStore({
-        url: 'mongodb://localhost:27017/test',
-        collection: 'sessions',
-        ttl: 14 * 24 * 60 * 60, // = 14 days. Default
-        touchAfter: 24 * 60 * 60 // time period in seconds for refresh sessions
-    })
-}));
-
-router.use(session({
-    secret: 'password',
-    store: new MongoStore({
-      url: 'mongodb://localhost:27017/test',
-      collection: 'sessions',
-      ttl: 14 * 24 * 60 * 60 // = 14 days. Default
-    })
-}));
-//store destination server IP in mongo db
 
 /* Create Session and direct to suitable ws server. */
 router.get('/', function(req, res, next) {
@@ -45,7 +23,7 @@ router.get('/', function(req, res, next) {
   d = req.app.get('d');
   console.log('d value: ', d);
   if (d === true) {
-     res.render('index', { title: 'JSMpeg Stream Client. Servers down ', errorMsg: 'All Servers are currently down. Please retry after sometime.'});
+     res.render('index', { title: 'JSMpeg Stream Servers are down.', errorMsg: 'All Servers are currently down. Please retry after sometime.'});
   }
   else {
        x = req.app.get('x');//Gets variable x from app.js
