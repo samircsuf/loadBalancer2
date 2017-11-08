@@ -357,13 +357,14 @@ function setIsArrayEqual (oldArray, newArray){
 function scanConfigFile(tempConfig) {
    var scanIP = [],
        streamIP = [];
+       i = 0;
    for (x in tempConfig){
       console.log(tempConfig[x].scanIP);
-      scanIP[x] = JSON.stringify(tempConfig[x].scanIP);
+      scanIP[i] = JSON.stringify(tempConfig[x].scanIP);
       console.log(tempConfig[x].streamIP);
-      streamIP[x] = JSON.stringify(tempConfig[x].streamIP);
-      scanIP[x] = scanIP[x].replace(/"/g, '');
-      streamIP[x] = streamIP[x].replace(/"/g, '');
+      streamIP[i] = JSON.stringify(tempConfig[x].streamIP);
+      scanIP[i] = scanIP[x].replace(/"/g, '');
+      streamIP[i] = streamIP[x].replace(/"/g, '');
    }
    return [scanIP, streamIP];
 }
