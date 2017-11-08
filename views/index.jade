@@ -1,9 +1,9 @@
 extends layout
 
 block content
-  h1= title
-  p Welcome to #{title}
-  p #{errorMsg}
+h1 JSMpeg Streaming Service.
+h3 Welcome to #{title}
+h1(style='color: #C6422D') #{errorMsg}
 
   body
     canvas#video-canvas1
@@ -12,7 +12,3 @@ block content
       var canvas1 = document.getElementById('video-canvas1');
       var wsUrl = !{JSON.stringify(url)};
       var player1 = new JSMpeg.Player(wsUrl, {canvas: canvas1});
-      if (player1.source.socket.readyState === 3){
-         console.log('player1.source.socket.readyState', player1.source.socket.readyState);
-         document.getElementById('error-msg').innerHTML = err.message;
-      }
