@@ -358,13 +358,15 @@ function scanConfigFile(tempConfig) {
    var scanIP = [],
        streamIP = [];
        i = 0;
+   console.log('temporary config file contains following scanIP and streamIP:')
    for (x in tempConfig){
       console.log(tempConfig[x].scanIP);
       scanIP[i] = JSON.stringify(tempConfig[x].scanIP);
       console.log(tempConfig[x].streamIP);
       streamIP[i] = JSON.stringify(tempConfig[x].streamIP);
-      scanIP[i] = scanIP[x].replace(/"/g, '');
-      streamIP[i] = streamIP[x].replace(/"/g, '');
+      scanIP[i] = scanIP[i].replace(/"/g, '');
+      streamIP[i] = streamIP[i].replace(/"/g, '');
+      i++;
    }
    return [scanIP, streamIP];
 }
